@@ -4,7 +4,6 @@ import hashlib
 import io
 from pathlib import Path
 import re
-import shlex
 import unittest
 import zipfile
 
@@ -13,11 +12,10 @@ class BundleTests(unittest.TestCase):
     def test_payload_matches_sources_and_preserves_stdin(self):
         root = Path(__file__).resolve().parent.parent
         script = (root / "realm.sh").read_text("utf-8")
-        command = script[script.index("exec python3 -c "):]
-        argv = shlex.split(command)
-        self.assertEqual(argv[:4], ["exec", "python3", "-c", argv[3]])
-        self.assertEqual(argv[4], "$@")
-        program = argv[3]
+        command, program = script.split("3<<'EZREALM_BUNDLE_PY'\n", 1)
+        self.assertIn('exec python3 /dev/fd/3 "$@" ', command)
+        self.assertTrue(program.endswith('EZREALM_BUNDLE_PY\n'))
+        program = program.removesuffix('EZREALM_BUNDLE_PY\n')
         ast.parse(program)
         data = base64.b64decode(re.search(r'payload = base64.b64decode\("""\n(.*?)\n"""\)', program, re.S)[1])
         expected = re.search(r'expected = "([0-9a-f]{64})"', program)[1]

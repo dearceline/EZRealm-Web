@@ -4,7 +4,6 @@ import base64
 import hashlib
 import io
 from pathlib import Path
-import shlex
 import textwrap
 import zipfile
 
@@ -87,8 +86,10 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 '''
-    # -c preserves the original standard input for menu 12 and its EOF handling.
-    script += 'exec python3 -c ' + shlex.quote(bootstrap) + ' "$@"\n'
+    # A separate descriptor keeps stdin available for option 12, and avoids
+    # Linux's per-argument size limit for the self-contained payload.
+    script += 'exec python3 /dev/fd/3 "$@" 3<<\'EZREALM_BUNDLE_PY\'\n'
+    script += bootstrap + 'EZREALM_BUNDLE_PY\n'
     (ROOT / "realm.sh").write_text(script, encoding="utf-8", newline="\n")
     print(f"realm.sh built: {len(data)} payload bytes, sha256={digest}")
 

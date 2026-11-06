@@ -8,6 +8,7 @@
 4. 真实转发：设置 `REALM_BINARY` 后使用独立临时配置启动官方 v2.7.0，实际传输 TCP 和 UDP 数据，覆盖 IPv4、IPv6、TCP-only、UDP-only 和 TOML/JSON。验证 `remark` 备注字段不会阻止官方内核加载配置。
 5. Linux PTY：进入选项 12、粘贴多行、发送真实终端 Ctrl+D、检查统计，再进入菜单 3，验证 EOF 没有关闭菜单输入。
 6. 一次性 Linux 安装：执行实际 `realm.sh --import -`，检查旧配置字节备份、原有 stdin 保留、SHA256 校验安装、systemd 启动、非 root Web 用户、登录、Unix 代理修改、应用配置以及重跑安装不改写现有配置。
+7. 缺少 Python：在不包含 Python 的官方 `debian:12-slim` 容器中运行实际 `realm.sh --version`，验证从 Debian 软件源自动安装依赖；另用隔离的 PATH 和模拟 apt 执行真实前置流程，验证已有合适解释器时不调用 apt、识别版本化 Python、软件源更新/安装失败时停止，以及安装过程不消耗规则输入。模拟测试不修改真实系统软件包。
 
 本地执行：
 

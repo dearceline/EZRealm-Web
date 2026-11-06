@@ -9,14 +9,13 @@
 支持 **systemd Linux + Python 3.11 或更高版本**，推荐 Debian 12/13、Ubuntu 24.04。自动安装 Realm 二进制支持 x86_64 和 aarch64。管理脚本为 1.0.0，转发内核固定使用官方 v2.7.0。
 
 ```bash
-# 如未安装 Python（Debian 12/13、Ubuntu 24.04）
-apt-get update && apt-get install -y python3 ca-certificates wget
-
 # 下载、检查并运行；请使用 root
 wget -O realm.sh https://raw.githubusercontent.com/dearceline/EZRealm-Web/main/realm.sh
 bash -n realm.sh
 chmod +x realm.sh && ./realm.sh
 ```
+
+脚本先检测 Python 3.11+，也会识别 `python3.11` 等版本化命令。找不到合适版本且系统提供 `apt-get` 时，自动执行 `apt-get update` 并安装 `python3 ca-certificates`；不会替换系统 Python 的链接，也不添加第三方软件源。若软件源更新/安装失败，会显示原因并停止。若当前系统软件源的 Python 版本过旧，需要先升级系统或自行提供 Python 3.11+。依赖安装不读取规则的标准输入。
 
 脚本内置完整管理程序及固定版本的 TOML 库，无需在服务器安装 pip、Node.js 或编译环境。下载使用 HTTPS 证书验证；不使用 `--no-check-certificate` 或第三方下载代理。新装 Realm 时，从官方发布页下载 v2.7.0 及其 SHA256 校验文件，验证后安装。
 

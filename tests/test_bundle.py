@@ -13,7 +13,7 @@ class BundleTests(unittest.TestCase):
         root = Path(__file__).resolve().parent.parent
         script = (root / "realm.sh").read_text("utf-8")
         command, program = script.split("3<<'EZREALM_BUNDLE_PY'\n", 1)
-        self.assertIn('exec python3 /dev/fd/3 "$@" ', command)
+        self.assertIn('exec "$realm_python" /dev/fd/3 "$@" ', command)
         self.assertTrue(program.endswith('EZREALM_BUNDLE_PY\n'))
         program = program.removesuffix('EZREALM_BUNDLE_PY\n')
         ast.parse(program)

@@ -1,0 +1,40 @@
+name: Test and verify installation
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: Download official Realm v2.7.0 and verify SHA256
+        run: |
+          mkdir -p /tmp/realm-test
+          cd /tmp/realm-test
+          curl --fail --location --proto '=https' --tlsv1.2 -O https://github.com/zhboner/realm/releases/download/v2.7.0/realm-x86_64-unknown-linux-musl.tar.gz
+          curl --fail --location --proto '=https' --tlsv1.2 -O https://github.com/zhboner/realm/releases/download/v2.7.0/realm-x86_64-unknown-linux-musl.sha256
+          sha256sum -c realm-x86_64-unknown-linux-musl.sha256
+          tar -xzf realm-x86_64-unknown-linux-musl.tar.gz realm
+      - name: Unit, HTTP security, actual TCP/UDP and Ctrl+D PTY tests
+        env:
+          REALM_BINARY: /tmp/realm-test/realm
+        run: python -m unittest discover -s tests -v
+      - name: Rebuild and check the one-file installer
+        run: |
+          python tools/build_bundle.py
+          git diff --exit-code -- realm.sh
+          bash -n realm.sh
+          node --check ezrealm/static/app.js
+      - name: Install and test systemd services on disposable runner
+        run: sudo --preserve-env=GITHUB_ACTIONS $(which python) tests/systemd_smoke.py
+      - name: Service logs if installation fails
+        if: failure()
+        run: sudo journalctl -u realm -u ezrealm-web -u ezrealm-broker --no-pager -n 120

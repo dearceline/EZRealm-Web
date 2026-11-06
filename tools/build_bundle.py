@@ -29,10 +29,11 @@ def build():
         raise RuntimeError("Build requires tomlkit==0.13.3")
     files["TOMLKIT-LICENSE"] = distribution.read_text("LICENSE").encode()
     buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+    # Stored entries also avoid zlib-version differences across Python builds.
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_STORED) as archive:
         for name, data in sorted(files.items()):
             info = zipfile.ZipInfo(name, (2026, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.create_system = 3  # Stable ZIP header on Windows and Linux.
             info.external_attr = 0o100644 << 16
             archive.writestr(info, data)

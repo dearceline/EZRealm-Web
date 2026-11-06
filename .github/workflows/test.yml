@@ -6,6 +6,22 @@ on:
 permissions:
   contents: read
 jobs:
+  debian12:
+    runs-on: ubuntu-24.04
+    container: debian:12-slim
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap from a Debian 12 image without Python
+        run: |
+          if command -v python3; then echo "Expected an image without Python"; exit 1; fi
+          bash -n realm.sh
+          bash realm.sh --version
+          python3 --version
+      - name: Dependency preflight, apt failures and stdin preservation
+        run: python3 -m unittest discover -s tests -p test_bootstrap.py -v
+      - name: Verify installed bundle matches source files
+        run: python3 -m unittest discover -s tests -p test_bundle.py -v
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 12

@@ -81,14 +81,45 @@ if [ "${EUID}" -ne 0 ]; then
   echo "请使用 root 运行：sudo bash realm.sh" >&2
   exit 1
 fi
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "需要 Python 3.11+。Debian 12 / Ubuntu 24.04：apt-get update && apt-get install -y python3 ca-certificates" >&2
-  exit 1
+realm_python=""
+realm_find_python() {
+  local candidate
+  for candidate in python3 python3.14 python3.13 python3.12 python3.11; do
+    if command -v "$candidate" >/dev/null 2>&1 &&
+       "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
+      realm_python="$(command -v "$candidate")"
+      return 0
+    fi
+  done
+  return 1
+}
+if ! realm_find_python; then
+  if command -v apt-get >/dev/null 2>&1; then
+    echo "未找到 Python 3.11+，正在从系统软件源安装 Python 3 和 CA 证书……"
+    if ! apt-get update </dev/null; then
+      echo "更新软件源失败，请检查服务器网络和 apt 软件源后重试。" >&2
+      exit 1
+    fi
+    if ! DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 ca-certificates </dev/null; then
+      echo "安装 Python 依赖失败，请检查上面的 apt 错误后重试。" >&2
+      exit 1
+    fi
+    hash -r
+  fi
+  if ! realm_find_python; then
+    if command -v python3 >/dev/null 2>&1; then
+      echo "检测到 $(python3 --version 2>&1)，但本程序需要 Python 3.11+。" >&2
+    else
+      echo "未安装 Python 3.11+，且无法自动安装。" >&2
+    fi
+    echo "请使用支持 Python 3.11+ 的系统软件源安装；推荐 Debian 12/13 或 Ubuntu 24.04。" >&2
+    exit 1
+  fi
 fi
 '''
     # A separate descriptor keeps stdin available for option 12, and avoids
     # Linux's per-argument size limit for the self-contained payload.
-    script += 'exec python3 /dev/fd/3 "$@" 3<<\'EZREALM_BUNDLE_PY\'\n'
+    script += 'exec "$realm_python" /dev/fd/3 "$@" 3<<\'EZREALM_BUNDLE_PY\'\n'
     script += bootstrap + 'EZREALM_BUNDLE_PY\n'
     (ROOT / "realm.sh").write_text(script, encoding="utf-8", newline="\n")
     print(f"realm.sh built: {len(data)} payload bytes, sha256={digest}")

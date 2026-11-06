@@ -9,7 +9,8 @@ if ! command -v python3 >/dev/null 2>&1; then
   echo "需要 Python 3.11+。Debian 12 / Ubuntu 24.04：apt-get update && apt-get install -y python3 ca-certificates" >&2
   exit 1
 fi
-exec python3 -c 'import base64, hashlib, io, os, pathlib, shutil, sys, tempfile, zipfile
+exec python3 /dev/fd/3 "$@" 3<<'EZREALM_BUNDLE_PY'
+import base64, hashlib, io, os, pathlib, shutil, sys, tempfile, zipfile
 if sys.version_info < (3, 11):
     raise SystemExit("需要 Python 3.11+；推荐 Debian 12 / Ubuntu 24.04")
 if sys.platform != "linux":
@@ -2988,4 +2989,4 @@ if not destination.exists():
         if temporary.exists():
             shutil.rmtree(temporary)
 os.execv(sys.executable, [sys.executable, str(destination / "entry.py"), "cli", *sys.argv[1:]])
-' "$@"
+EZREALM_BUNDLE_PY
